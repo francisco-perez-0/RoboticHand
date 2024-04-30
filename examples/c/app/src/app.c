@@ -8,70 +8,72 @@
 
 #include "app.h"         // <= Su propia cabecera
 #include "sapi.h"        // <= Biblioteca sAPI
+#include "timer.h"
+#include "mef.h"
+
+char dataArray[5]= {0};
+uint8_t flagWait=0;
+bool_t tec3Value = OFF;
+
+#define SERVO_N SERVO0
+/*
+   SERVO0 <---> T_FIL1 de EDU-CIAA-NXP
+   SERVO1 <---> T_COL0 de EDU-CIAA-NXP
+   SERVO2 <---> T_FIL2 de EDU-CIAA-NXP
+   SERVO3 <---> T_FIL3 de EDU-CIAA-NXP
+   SERVO4 <---> GPIO8 de EDU-CIAA-NXP
+   SERVO5 <---> LCD1 de EDU-CIAA-NXP
+   SERVO6 <---> LCD2 de EDU-CIAA-NXP
+   SERVO7 <---> LCD3 de EDU-CIAA-NXP
+   SERVO8 <---> GPIO2 de EDU-CIAA-NXP
+*/
+
+#define LED_ROJO GPIO1
+#define LED_VERDE GPIO3
+#define LED_AZUL GPIO7
 
 // FUNCION PRINCIPAL, PUNTO DE ENTRADA AL PROGRAMA LUEGO DE ENCENDIDO O RESET.
 int main( void )
 {
-   // ---------- CONFIGURACIONES ------------------------------
+   // Configuraciones
 
    // Inicializar y configurar la plataforma
-   boardConfig();
 
-   // Crear varias variables del tipo booleano
-   bool_t buttonValue = OFF;
-   bool_t ledValue    = OFF;
-   // Crear variable del tipo tick_t para contar tiempo
-   tick_t timeCount   = 0;
+	boardConfig();
 
-   // ---------- REPETIR POR SIEMPRE --------------------------
+
+   servoConfig(4, SERVO_ENABLE);
+   servoConfig(8, SERVO_ENABLE);
+   servoConfig(1, SERVO_ENABLE);
+   servoConfig(2, SERVO_ENABLE);
+   servoConfig(3, SERVO_ENABLE);
+
+
+   servoConfig(SERVO4, SERVO_ENABLE_OUTPUT);
+   servoConfig(SERVO8, SERVO_ENABLE_OUTPUT);
+   servoConfig(SERVO1, SERVO_ENABLE_OUTPUT);
+   servoConfig(SERVO2, SERVO_ENABLE_OUTPUT);
+   servoConfig(SERVO3, SERVO_ENABLE_OUTPUT);
+
+
+
+
+
+   //Inicializar MEF y la temporizacion del programa
+   MEF_init();
+   TIMER_Init(1);
+
+   gpioWrite(LED_ROJO,ON);
+
+   uint16_t call_count=0;
+   uint8_t i=0;
+
+
+   //Bucle infinito
    while( TRUE ) {
+	   TIMER_Dispatch_Task();
 
-      /* Retardo bloqueante durante 100ms */
-      
-      delay( 100 );
-      
-      /* Si pasaron 10 segundos comienza a funcionar el programa que copia las
-         acciones en BOTON al LED. Mientras espera titila el LED.  */
-      
-      timeCount++;      
-      
-      if( timeCount == 100 ){ // 100ms * 100 = 10s
-         
-         while( TRUE ) {
-            
-            /* Si se presiona CIAA_BOARD_BUTTON, enciende el CIAA_BOARD_LED */
-
-            // Leer pin conectado al boton.
-            buttonValue = gpioRead( CIAA_BOARD_BUTTON );
-            // Invertir el valor leido, pues lee un 0 (OFF) con boton
-            // presionado y 1 (ON) al liberarla.
-            buttonValue = !buttonValue;
-            // Escribir el valor leido en el LED correspondiente.
-            gpioWrite( CIAA_BOARD_LED, buttonValue );
-
-            /* Enviar a la salida estandar (UART_DEBUG) el estado del LED */
-            
-            // Leer el estado del pin conectado al led
-            ledValue = gpioRead( CIAA_BOARD_LED );
-            // Chequear si el valor leido es encedido
-            if( ledValue == ON ) {
-               // Si esta encendido mostrar por UART_USB "LED encendido."
-               printf( "LED encendido.\r\n" );
-            } else {
-               // Si esta apagado mostrar por UART_USB "LED apagado."
-               printf( "LED apagado.\r\n" );
-            }
-            delay( 250 );
-            
-         }
-      } else {
-         // Intercambiar el valor de CIAA_BOARD_LED
-         gpioToggle(CIAA_BOARD_LED);
-      }
    }
 
-   // NO DEBE LLEGAR NUNCA AQUI, debido a que a este programa se ejecuta
-   // directamenteno sobre un microcontroladore y no es llamado por ningun
-   // Sistema Operativo, como en el caso de un programa para PC.
    return 0;
 }
